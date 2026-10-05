@@ -1,0 +1,37 @@
+.nav {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.75rem 2rem;
+  padding: 1.25rem var(--gutter);
+  border-bottom: 1px solid var(--line);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.4rem;
+  margin-right: 1rem;
+}
+
+.nav a { color: var(--text-soft); }
+.nav a:hover { color: var(--powder); }
+
+.nav a.active {
+  color: var(--powder);
+  text-decoration: underline;
+  text-decoration-color: var(--blue);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 8px;
+}
+
+.nav .wordmark { color: var(--powder); }
+
+.nav .signin {
+  margin-left: auto;
+  color: var(--powder);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.4rem 1rem;
+}
+.nav .signin:hover { border-color: var(--blue); }
