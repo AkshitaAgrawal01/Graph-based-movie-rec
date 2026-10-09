@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
 import { getMovie } from "../api/movies.js";
 import { getMyRating, rateMovie } from "../api/ratings.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import Poster from "../components/Poster.jsx";
 import StarRating from "../components/StarRating.jsx";
 import "./MovieDetail.css";
 
-// TEMPORARY stand-in until F4 builds real login.
-// Change it to `null` to see the signed-out view.
-const currentUser = { name: "demo" };
-
 export default function MovieDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const location = useLocation();
+
   const [movie, setMovie] = useState(null);
   const [myRating, setMyRating] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -28,7 +28,7 @@ export default function MovieDetail() {
       try {
         const [m, r] = await Promise.all([
           getMovie(id),
-          currentUser ? getMyRating(id) : 0,
+          user ? getMyRating(id) : Promise.resolve(0),
         ]);
         if (!ignore) {
           setMovie(m);
@@ -43,17 +43,17 @@ export default function MovieDetail() {
 
     load();
     return () => { ignore = true; };
-  }, [id]);
+  }, [id, user]);
 
   async function handleRate(value) {
     const previous = myRating;
-    setMyRating(value); // show the new rating immediately
+    setMyRating(value);
     setSaveMessage("");
     try {
       await rateMovie(movie.movieId, value);
       setSaveMessage("Rating saved.");
     } catch {
-      setMyRating(previous); // put the old rating back
+      setMyRating(previous);
       setSaveMessage("We couldn't save your rating. Try again.");
     }
   }
@@ -91,7 +91,7 @@ export default function MovieDetail() {
 
           <section className="rating">
             <h2>Your rating</h2>
-            {currentUser ? (
+            {user ? (
               <>
                 <StarRating value={myRating} onRate={handleRate} />
                 <p className="rating-note" aria-live="polite">
@@ -103,7 +103,10 @@ export default function MovieDetail() {
               </>
             ) : (
               <p className="rating-note">
-                <Link to="/login" className="inline-link">Sign in</Link> to rate this movie.
+                <Link to="/login" state={{ from: location.pathname }} className="inline-link">
+                  Sign in
+                </Link>{" "}
+                to rate this movie.
               </p>
             )}
           </section>

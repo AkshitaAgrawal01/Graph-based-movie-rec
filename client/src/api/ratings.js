@@ -1,21 +1,39 @@
-import { delay } from "./movies.js";
+const API_URL = import.meta.env.VITE_API_URL;
 
-// Fake "database table". A Map holds one value per key,
-// so re-rating a movie replaces the old value (business rule 5.5).
-const ratings = new Map();
+function authHeaders() {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export async function getMyRating(movieId) {
-  await delay(150);
-  return ratings.get(Number(movieId)) ?? 0; // 0 means "not rated yet"
+  const res = await fetch(`${API_URL}/ratings/${movieId}`, {
+    headers: authHeaders(),
+  });
+
+  if (!res.ok) return 0; // not signed in, or no rating yet -- both show as "unrated"
+  const data = await res.json();
+  return data.rating;
 }
 
 export async function rateMovie(movieId, rating) {
-  await delay(250);
+  const res = await fetch(`${API_URL}/ratings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ movieId, rating }),
+  });
 
-  // Validate in the data layer too: never trust that the UI sent good data.
-  const valid = rating >= 0.5 && rating <= 5 && Number.isInteger(rating * 2);
-  if (!valid) throw new Error("Rating must be 0.5 to 5 in half-star steps");
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Could not save your rating.");
+  }
 
-  ratings.set(Number(movieId), rating);
-  return { movieId: Number(movieId), rating };
+  return res.json();
+}
+export async function getMyRatings() {
+  const res = await fetch(`${API_URL}/ratings`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Could not load your ratings.");
+  const { ratings } = await res.json();
+  return ratings;
 }

@@ -1,0 +1,36 @@
+1.
+hold-out evaluation
+Pearson vs RuzickaSimilarity
+
+2.
+another 
+One thing to notice in the output
+
+User 2's list has several high-numbered, obscure-looking IDs: 158966, 178827, 128520, 117192. In MovieLens, high IDs are mostly newer, lesser-known movies. This is the weakness I flagged earlier. A movie only needs 2 neighbors to qualify, and if both rated it far above their own averages, its predicted score shoots up. Two enthusiastic votes on a movie almost nobody has seen can beat a well-established favourite.
+
+You can check this yourself in PowerShell, from compute/. Replace the ID with any one from the list:
+
+powershell
+Select-String "^178827," ..\data\movies.csv
+(Select-String ",178827," ..\data\ratings.csv).Count
+
+The first line shows the title. The second shows how many people rated it. If that number is tiny, like 2 to 5, you've seen the problem directly.
+
+Is it a bug?
+
+No. The algorithm is doing exactly what it was designed to do, and your tests prove that. It's a tuning question: how much evidence should we ask for before trusting a prediction? Two standard remedies:
+
+Raise minNeighborsPerMovie from 2 to something like 3 to 5. It's the simplest option, and it costs some coverage.
+Shrink similarity when the overlap is small, so neighbors who share only 5 movies with the user count for less than neighbors who share 50.
+
+I haven't changed either, because choosing between them by eye would be guessing. That's the job of the hold-out evaluation you parked: it measures which setting predicts hidden ratings best. Add a line to your todolater file so you don't forget: "run Evaluator, tune minNeighborsPerMovie and similarity shrinkage."
+
+3.
+Restart the server and test in Postman, using a Bearer token from a MovieLens-imported user, not your test signup — since your test account has 0 ratings and would only ever show the fallback. To get one:
+
+Since MovieLens users can’t log in (their passwordHash is the placeholder string "not-a-real-account"), you can’t test this one through a normal login. The simplest path: temporarily query Mongo for a MovieLens user’s _id (e.g. the legacyId: "3" one you already have), and hand-craft a valid JWT for it directly in a quick Node one-liner — or, simpler for now: just test the cold-start path, using your real test account’s token:
+
+GET http://localhost:5000/api/recommendations
+Authorization: Bearer <your test account's token>
+
+Expect: { items: [...], fallback: true }, since your test account has 0 ratings, showing the GLOBAL list (Shawshank, Godfather, etc.).

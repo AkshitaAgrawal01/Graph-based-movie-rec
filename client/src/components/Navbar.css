@@ -35,3 +35,8 @@
   padding: 0.4rem 1rem;
 }
 .nav .signin:hover { border-color: var(--blue); }
+button.signin {
+  font: inherit;
+  background: none;
+  cursor: pointer;
+}

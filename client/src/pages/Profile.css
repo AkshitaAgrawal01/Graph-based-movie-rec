@@ -1,0 +1,31 @@
+.profile section { margin-bottom: 3.5rem; }
+
+.section-title {
+  font-size: 1.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.75rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+  gap: 2rem 1.25rem;
+}
+
+.rated-card { position: relative; }
+.rated-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--ink);
+  color: var(--blue);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.fallback-note { color: var(--text-soft); margin-bottom: 1.25rem; max-width: 60ch; }
+.status { color: var(--text-soft); padding: 2rem 0; }

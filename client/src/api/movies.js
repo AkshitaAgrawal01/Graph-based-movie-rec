@@ -1,31 +1,17 @@
-import { MOVIES, OVERVIEWS } from "./mockData.js";
-
-export const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const API_URL = import.meta.env.VITE_API_URL;
 
 export async function getMovies({ search = "", page = 1, pageSize = 8 } = {}) {
-  await delay(300); // pretend the network takes a moment
+  const params = new URLSearchParams({ search, page, pageSize });
+  const res = await fetch(`${API_URL}/movies?${params}`);
 
-  const q = search.trim().toLowerCase();
-  const filtered = q
-    ? MOVIES.filter((m) => m.title.toLowerCase().includes(q)) // REQ-BROWSE-2: substring match
-    : MOVIES;
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const start = (page - 1) * pageSize;
-
-  return {
-    movies: filtered.slice(start, start + pageSize),
-    page,
-    totalPages,
-    total: filtered.length,
-  };
+  if (!res.ok) throw new Error("Could not load movies.");
+  return res.json();
 }
 
 export async function getMovie(id) {
-  await delay(200);
+  const res = await fetch(`${API_URL}/movies/${id}`);
 
-  const movie = MOVIES.find((m) => m.movieId === Number(id));
-  if (!movie) return null; // "not found" is an expected outcome, not a failure
-
-  return { ...movie, overview: OVERVIEWS[movie.movieId] ?? null };
+  if (res.status === 404) return null; // "not found" is an expected outcome, not a failure
+  if (!res.ok) throw new Error("Could not load this movie.");
+  return res.json();
 }
