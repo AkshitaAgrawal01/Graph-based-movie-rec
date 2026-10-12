@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "movie-art": "^3.0.2",
+    "movie-info": "^3.0.3"
+  }
+}

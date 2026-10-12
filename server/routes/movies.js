@@ -39,6 +39,26 @@ router.get("/", async (req, res) => {
     ? { title: { $regex: safeSearch, $options: "i" } } // "i" = case-insensitive
     : {};
 
+  if (req.query.genre) {
+    filter.genres = req.query.genre;
+  }
+  if (req.query.year) {
+    filter.year = Number(req.query.year);
+  }
+  if (req.query.minRating) {
+    const min = parseFloat(req.query.minRating);
+    if (!isNaN(min) && min > 0) {
+      const RatingModel = (await import("../models/Rating.js")).default;
+      const ratedMovies = await RatingModel.aggregate([
+        { $group: { _id: "$movieId", avg: { $avg: "$rating" } } },
+        { $match: { avg: { $gte: min } } },
+        { $project: { _id: 1 } },
+      ]);
+      const matchedIds = ratedMovies.map((r) => r._id);
+      filter.movieId = { $in: matchedIds };
+    }
+  }
+
   try {
     const total = await Movie.countDocuments(filter);
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -65,21 +85,79 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/trending", async (req, res) => {
+  try {
+    const tmdbRes = await fetch(
+      `https://api.themoviedb.org/3/trending/movie/week?api_key=${process.env.TMDB_API_KEY}`
+    );
+    const tmdbData = await tmdbRes.json();
+    if (!tmdbData.results) {
+      return res.json({ movies: [] });
+    }
+
+    const tmdbIds = tmdbData.results.map((m) => m.id);
+    const localMatches = await Movie.find({ tmdbId: { $in: tmdbIds } });
+    const localMap = new Map(localMatches.map((m) => [m.tmdbId, m]));
+
+    const movies = tmdbData.results.slice(0, 15).map((m) => {
+      const local = localMap.get(m.id);
+      return {
+        movieId: local ? local.movieId : m.id,
+        title: m.title,
+        year: m.release_date ? new Date(m.release_date).getFullYear() : null,
+        posterUrl: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : null,
+        genres: [],
+        overview: m.overview,
+      };
+    });
+
+    res.json({ movies });
+  } catch (err) {
+    res.status(500).json({ error: "Could not fetch trending movies." });
+  }
+});
+
+import Rating from "../models/Rating.js";
+
 router.get("/:movieId", async (req, res) => {
   try {
-    const movie = await Movie.findOne({ movieId: Number(req.params.movieId) });
+    const movieId = Number(req.params.movieId);
+    const movie = await Movie.findOne({ movieId });
     if (!movie) return res.status(404).json({ error: "Movie not found." });
+
+    const agg = await Rating.aggregate([
+      { $match: { movieId } },
+      { $group: { _id: null, avg: { $avg: "$rating" }, count: { $sum: 1 } } }
+    ]);
+    const avgRating = agg.length ? agg[0].avg : 0;
+    const ratingCount = agg.length ? agg[0].count : 0;
 
     res.json({
       movieId: movie.movieId,
       title: movie.title,
       year: movie.year,
       genres: movie.genres,
+      tmdbId: movie.tmdbId,
       posterUrl: movie.posterUrl,
       overview: movie.overview ?? null,
+      averageRating: avgRating,
+      ratingCount: ratingCount
     });
   } catch (err) {
     res.status(500).json({ error: "Could not load this movie." });
+  }
+});
+
+router.get("/:movieId/tmdb", async (req, res) => {
+  try {
+    const movie = await Movie.findOne({ movieId: Number(req.params.movieId) });
+    if (!movie || !movie.tmdbId) return res.json(null);
+
+    const tmdbRes = await fetch(`https://api.themoviedb.org/3/movie/${movie.tmdbId}?api_key=${process.env.TMDB_API_KEY}&append_to_response=credits,videos`);
+    const data = await tmdbRes.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch TMDB details." });
   }
 });
 

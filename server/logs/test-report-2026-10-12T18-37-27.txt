@@ -1,0 +1,55 @@
+MovieRec — Automated Test Report
+Generated : 2026-10-12T18:37:27.284Z
+API       : http://localhost:5000/api
+
+════════════════════════════════════════════════════════════════════════
+
+PASS  [F1.1 ]  Register new user                                       834ms   →  token received
+PASS  [F1.2 ]  Login returns JWT                                       106ms   →  jwt ok
+PASS  [F1.3 ]  Wrong password returns 401                              101ms
+PASS  [F1.4 ]  GET /auth/me returns user                               10ms   →  user id undefined
+PASS  [F1.5 ]  Missing token → 401 on protected route                  5ms
+PASS  [F1.6 ]  Invalid token → 401                                     4ms
+PASS  [F2.1 ]  GET /movies returns paginated list                      17ms   →  9742 total, p1 has 8 movies, 16ms
+PASS  [F2.2 ]  Search filter works                                     49ms   →  4 results, 4 contain 'matrix'
+PASS  [F2.3 ]  Genre filter works                                      20ms   →  978 Horror movies found
+PASS  [F2.4 ]  Year filter works                                       17ms   →  237 movies from 1994
+PASS  [F2.5 ]  GET /movies/trending returns TMDB data with posters     533ms   →  15 trending, 15 with posters
+PASS  [F2.6 ]  Regex injection is safe (special chars in search)       50ms   →  no crash on regex special chars
+PASS  [F2.7 ]  GET /movies/:id returns single movie                    94ms   →  "Toy Story (1995)" (1995), avgRating=3.92
+PASS  [F2.8 ]  Batch ?ids= lookup works                                5ms   →  5 movies by id: Toy Story (1995), Jumanji (1995), Grumpier Old Men (1995), Waiting to Exhale (1995), Father of the Bride Part II (1995)
+PASS  [F3.1 ]  Submit a rating (POST /ratings)                         33ms   →  rated movie 1 → 4.5★
+PASS  [F3.2 ]  Rating appears in GET /ratings                          9ms   →  found rating 4.5★ for movie 1
+PASS  [F3.3 ]  Update rating (upsert — no duplicate)                   16ms   →  upsert ok — 1 rating record, updated to 3★
+PASS  [F3.4 ]  Rating > 5 is rejected                                  5ms   →  6★ rating correctly rejected
+PASS  [F3.5 ]  Rating < 0.5 is rejected                                4ms   →  0★ rating correctly rejected
+PASS  [F3.6 ]  Rating without auth returns 401                         2ms
+PASS  [F4.1 ]  Cold-start: < 8 ratings → fallback=true                 13ms   →  fallback mode, 20 global items
+PASS  [F4.2 ]  Recommendations returns items array                     8ms   →  20 items returned
+PASS  [F4.3 ]  Graph endpoint returns nodes+links                      6ms   →  0 nodes, 0 links
+PASS  [F4.4 ]  Global/popular recommendations exist                    5ms   →  20 global recommendation items
+PASS  [F5.1 ]  GET /watchlist requires auth                            2ms
+PASS  [F5.2 ]  POST /watchlist adds movie                              14ms   →  movie 77 added
+PASS  [F5.3 ]  Watchlist is retrieved correctly                        8ms   →  1 items, found movie 77
+PASS  [F5.4 ]  Duplicate watchlist add is idempotent (no error)        15ms   →  upsert ok — only 1 entry
+PASS  [F5.5 ]  DELETE /watchlist/:id removes movie                     23ms   →  movie 77 removed successfully
+PASS  [NF1.1]  Catalog load < 500ms                                    19ms   →  19ms
+PASS  [NF1.2]  Search response < 400ms                                 30ms   →  30ms
+PASS  [NF1.3]  Rating save < 250ms                                     8ms   →  7ms
+PASS  [NF1.4]  Recommendations fetch < 600ms (pre-computed)            8ms   →  8ms
+PASS  [NF1.5]  Movie detail fetch < 300ms (local data)                 61ms   →  59ms
+PASS  [NF2.1]  Password is hashed (bcrypt) in DB                       70ms   →  hash prefix: $2b$10$...
+PASS  [NF2.2]  GET /recommendations without token returns 401          2ms
+PASS  [NF2.3]  Rating missing movieId returns 400                      4ms
+FAIL  [NF2.4]  Watchlist POST missing movieId returns 400 or 500       10ms   →  Expected 4xx/5xx, got 200
+PASS  [NF3.1]  DB has all 9742 movies loaded                           12ms   →  9742 movies in DB
+PASS  [NF3.2]  DB has 100K+ ratings loaded                             44ms   →  100855 ratings in DB
+PASS  [NF3.3]  Recommendations were precomputed for 600+ users         214ms   →  611 recommendation documents
+FAIL  [NF3.4]  Recommendation items have explanation field             6ms   →  First item has no explanation
+PASS  [NF3.5]  Posters are being populated (> 5000 movies with poster) 17ms   →  7605 movies have posterUrl
+PASS  [AC1  ]  Recommendation scores are positive numbers              10ms   →  20 items all have positive scores
+PASS  [AC2  ]  Similarity values are in valid Pearson range [-1, 1]    8ms   →  60 neighbor similarity values all in [-1,1]
+PASS  [AC3  ]  Already-rated movies filtered from recommendations      19ms   →  rated movie correctly excluded from recs
+
+════════════════════════════════════════════════════════════════════════
+TOTAL: 46  |  PASS: 44  |  FAIL: 2  |  PASS RATE: 95.7%

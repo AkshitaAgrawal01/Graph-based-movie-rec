@@ -44,7 +44,7 @@ public final class MongoMain {
                     graph.userCount(), graph.movieCount(), graph.edgeCount(),
                     (tGraph - t0) / 1_000_000);
 
-            Recommender rec = new Recommender(graph, new PearsonSimilarity(MIN_OVERLAP), Recommender.Config.defaults());
+            Recommender rec = new Recommender(graph, new PearsonSimilarity(MIN_OVERLAP, 10), Recommender.Config.defaults());
 
             int withRecs = 0, cold = 0;
             try (RecommendationSink sink = new MongoRecommendationSink(db.getCollection("recommendations"))) {

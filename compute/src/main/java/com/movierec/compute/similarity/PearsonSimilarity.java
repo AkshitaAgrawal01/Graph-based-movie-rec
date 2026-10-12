@@ -16,12 +16,18 @@ public final class PearsonSimilarity implements Similarity {
 
     private static final double EPS = 1e-12;
     private final int minOverlap;
+    private final int shrinkage;
 
-    public PearsonSimilarity(int minOverlap) {
+    public PearsonSimilarity(int minOverlap, int shrinkage) {
         if (minOverlap < 2) {
             throw new IllegalArgumentException("minOverlap must be >= 2 (Pearson is meaningless below that)");
         }
         this.minOverlap = minOverlap;
+        this.shrinkage = Math.max(0, shrinkage);
+    }
+
+    public PearsonSimilarity(int minOverlap) {
+        this(minOverlap, 0);
     }
 
     @Override
@@ -56,6 +62,11 @@ public final class PearsonSimilarity implements Similarity {
         if (varA <= EPS || varB <= EPS) return 0;
 
         double r = cov / Math.sqrt(varA * varB);
-        return Math.max(-1.0, Math.min(1.0, r)); // guard against floating-point drift
+        r = Math.max(-1.0, Math.min(1.0, r)); // guard against floating-point drift
+        
+        if (shrinkage > 0) {
+            r *= (double) n / (n + shrinkage);
+        }
+        return r;
     }
 }

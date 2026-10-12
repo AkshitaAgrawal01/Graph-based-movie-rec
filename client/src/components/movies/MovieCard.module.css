@@ -1,0 +1,166 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-card);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-4px);
+  border-color: rgba(96, 165, 250, 0.55);
+  box-shadow: var(--shadow-card);
+}
+
+.imageContainer {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  width: 100%;
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+
+.imageContainer > :not(.watchlistBtn) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s ease;
+}
+
+.card:hover .imageContainer > :not(.watchlistBtn),
+.card:focus-visible .imageContainer > :not(.watchlistBtn) {
+  transform: scale(1.05);
+}
+
+.content {
+  padding: 12px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 5.4rem;
+}
+
+.title {
+  font-size: 0.95rem;
+  font-weight: 650;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em;
+}
+
+.year {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.score,
+.scorePlaceholder {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.score {
+  color: var(--accent-color);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .imageContainer > :not(.watchlistBtn) {
+    transition: none;
+  }
+
+  .card:hover,
+  .card:focus-visible {
+    transform: none;
+  }
+}
+
+.scoreRow {
+  margin-top: auto;
+  padding-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.whyBtn {
+  background: none;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.whyBtn:hover {
+  background: var(--accent-color);
+  color: var(--bg-card);
+}
+
+.linkWrapper {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ratingRow {
+  padding: 0 12px 12px;
+  margin-top: auto;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+.imageContainer {
+  position: relative;
+}
+
+.watchlistBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 2;
+  opacity: 0.8; /* Always visible */
+}
+
+.card:hover .watchlistBtn {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.watchlistBtn:hover {
+  background-color: var(--primary-color);
+  transform: scale(1.1);
+}
+
+.watchlistBtn.inWatchlist {
+  opacity: 1;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}

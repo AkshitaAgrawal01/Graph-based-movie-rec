@@ -19,7 +19,22 @@ public class MongoRecommendationSink implements RecommendationSink {
     @Override
     public void write(String userId, List<Recommendation> recommendations) {
         List<Document> items = recommendations.stream()
-                .map(r -> new Document("movieId", Integer.parseInt(r.movieId())).append("score", r.score()))
+                .map(r -> {
+                    Document doc = new Document("movieId", Integer.parseInt(r.movieId()))
+                            .append("score", r.score());
+                    if (r.explanation() != null) {
+                        List<Document> neighbors = r.explanation().topNeighbors().stream()
+                                .map(nb -> new Document("neighborId", nb.neighborId())
+                                        .append("similarity", nb.similarity())
+                                        .append("rating", nb.neighborRating())
+                                        .append("sharedMovies", nb.sharedMovies().stream().map(Integer::parseInt).toList()))
+                                .toList();
+                        doc.append("explanation", new Document("numNeighbors", r.explanation().numNeighbors())
+                                .append("avgSimilarity", r.explanation().avgSimilarity())
+                                .append("topNeighbors", neighbors));
+                    }
+                    return doc;
+                })
                 .toList();
 
         Document doc = new Document("userId", userId)

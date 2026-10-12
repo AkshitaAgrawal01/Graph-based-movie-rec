@@ -1,22 +1,46 @@
-import { Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar.jsx";
-import Catalog from "./pages/Catalog.jsx";
-import MovieDetail from "./pages/MovieDetail.jsx";
-import Auth from "./pages/Auth.jsx";
-import Profile from "./pages/Profile.jsx";
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Navbar from './components/layout/Navbar.jsx';
+import ProtectedRoute from './components/routing/ProtectedRoute.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
+import CatalogPage from './pages/CatalogPage.jsx';
+import MovieDetailPage from './pages/MovieDetailPage.jsx';
+import RecommendationsPage from './pages/RecommendationsPage.jsx';
+import WatchlistPage from './pages/WatchlistPage.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx';
 
-export default function App() {
+function App() {
   return (
-    <>
+    <div className="app-container">
       <Navbar />
-      <main className="page">
+      <main className="main-content">
         <Routes>
-          <Route path="/" element={<Catalog />} />
-          <Route path="/movies/:id" element={<MovieDetail />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/login" element={<Auth />} />
+          <Route path="/" element={<Navigate to="/movies" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/movies" element={<CatalogPage />} />
+          <Route path="/movies/:id" element={<MovieDetailPage />} />
+          <Route 
+            path="/recommendations" 
+            element={
+              <ProtectedRoute>
+                <RecommendationsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/watchlist" 
+            element={
+              <ProtectedRoute>
+                <WatchlistPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
-    </>
+    </div>
   );
 }
+
+export default App;

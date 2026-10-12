@@ -147,4 +147,10 @@ public final class BipartiteGraph {
     public boolean hasRated(int u, int m) {
         return Arrays.binarySearch(userMovies, userOffsets[u], userOffsets[u + 1], m) >= 0;
     }
+
+    /** Returns the rating user u gave to movie m, or Double.NaN if not rated. */
+    public double rating(int u, int m) {
+        int pos = Arrays.binarySearch(userMovies, userOffsets[u], userOffsets[u + 1], m);
+        return pos >= 0 ? userRatings[pos] : Double.NaN;
+    }
 }

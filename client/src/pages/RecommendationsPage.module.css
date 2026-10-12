@@ -1,0 +1,31 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.title {
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  letter-spacing: -0.03em;
+}
+
+.fallbackNotice {
+  background-color: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  line-height: 1.55;
+}
+
+.fallbackNotice h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--accent-color);
+}
+.fallbackNotice p {
+  margin-bottom: 0.5rem;
+}
+.fallbackNotice p:last-child {
+  margin-bottom: 0;
+}

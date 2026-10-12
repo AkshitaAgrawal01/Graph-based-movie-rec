@@ -13,14 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User-based collaborative filtering over the bipartite graph:
- * BFS candidates -> similarity -> min-heap top-K -> hash-map aggregation.
- *
- * Prediction (mean-centred, replaces SRS REQ-COMPUTE-5's raw sum):
- *   predicted(m) = mean_target + Σ S·(r_v,m - mean_v) / Σ|S|
- * with sums over the top-K neighbors v who rated m. Only positive-similarity neighbors are kept.
- */
 public final class Recommender {
 
     public record Config(int k, int n, int minUserRatings, int minNeighborsPerMovie) {
@@ -29,7 +21,7 @@ public final class Recommender {
                 throw new IllegalArgumentException("All config values must be >= 1");
             }
         }
-        public static Config defaults() { return new Config(50, 20, 3, 2); }
+        public static Config defaults() { return new Config(50, 20, 8, 3); }
     }
 
     private final BipartiteGraph graph;
@@ -44,7 +36,6 @@ public final class Recommender {
         this.finder = new CandidateFinder(graph);
     }
 
-    /** Top-K most similar users (positive similarity only), best first. */
     public List<Neighbor> topNeighbors(int target) {
         MinHeap heap = new MinHeap(config.k());
         for (int candidate : finder.find(target)) {
@@ -53,35 +44,63 @@ public final class Recommender {
         }
         return heap.toListDescending();
     }
+    
+    private static class Accumulator {
+        double num = 0, den = 0;
+        int count = 0;
+        List<Recommendation.NeighborEvidence> evidence = new ArrayList<>();
+    }
 
-    /** Recommendations for one user, best first. Empty for cold-start users (< minUserRatings). */
     public List<Recommendation> recommend(int target) {
         if (graph.userDegree(target) < config.minUserRatings()) return List.of();
 
         List<Neighbor> neighbors = topNeighbors(target);
         if (neighbors.isEmpty()) return List.of();
 
-        // movieIdx -> [Σ S·(r - mean_v), Σ|S|, neighborCount]
-        Map<Integer, double[]> acc = new HashMap<>();
+        // Calculate shared movies for each neighbor once
+        Map<Integer, List<String>> sharedMoviesByNeighbor = new HashMap<>();
+        for (Neighbor nb : neighbors) {
+            int v = nb.userIdx();
+            List<String> shared = new ArrayList<>();
+            // find overlap
+            int p1 = graph.userStart(target), p2 = graph.userStart(v);
+            while (p1 < graph.userEnd(target) && p2 < graph.userEnd(v)) {
+                int m1 = graph.movieAt(p1);
+                int m2 = graph.movieAt(p2);
+                if (m1 == m2) {
+                    shared.add(graph.movieId(m1));
+                    p1++; p2++;
+                } else if (m1 < m2) p1++;
+                else p2++;
+            }
+            sharedMoviesByNeighbor.put(v, shared);
+        }
+
+        Map<Integer, Accumulator> acc = new HashMap<>();
         for (Neighbor nb : neighbors) {
             int v = nb.userIdx();
             double meanV = graph.userMean(v);
             for (int e = graph.userStart(v); e < graph.userEnd(v); e++) {
                 int m = graph.movieAt(e);
-                if (graph.hasRated(target, m)) continue; // REQ-REC-2: never recommend rated movies
-                double[] a = acc.computeIfAbsent(m, k -> new double[3]);
-                a[0] += nb.similarity() * (graph.ratingAt(e) - meanV);
-                a[1] += Math.abs(nb.similarity());
-                a[2] += 1;
+                if (graph.hasRated(target, m)) continue;
+                
+                Accumulator a = acc.computeIfAbsent(m, k -> new Accumulator());
+                double rating = graph.ratingAt(e);
+                a.num += nb.similarity() * (rating - meanV);
+                a.den += Math.abs(nb.similarity());
+                a.count += 1;
+                a.evidence.add(new Recommendation.NeighborEvidence(
+                        graph.userId(v), nb.similarity(), rating, sharedMoviesByNeighbor.get(v)
+                ));
             }
         }
 
-                double meanT = graph.userMean(target);
+        double meanT = graph.userMean(target);
         List<Map.Entry<Integer, Double>> scored = new ArrayList<>();
-        for (Map.Entry<Integer, double[]> en : acc.entrySet()) {
-            double[] a = en.getValue();
-            if (a[2] < config.minNeighborsPerMovie() || a[1] == 0) continue;
-            double predicted = meanT + a[0] / a[1];
+        for (Map.Entry<Integer, Accumulator> en : acc.entrySet()) {
+            Accumulator a = en.getValue();
+            if (a.count < config.minNeighborsPerMovie() || a.den == 0) continue;
+            double predicted = meanT + a.num / a.den;
             scored.add(Map.entry(en.getKey(), predicted));
         }
 
@@ -90,9 +109,36 @@ public final class Recommender {
 
         List<Recommendation> out = new ArrayList<>(Math.min(config.n(), scored.size()));
         for (int i = 0; i < scored.size() && i < config.n(); i++) {
+            int m = scored.get(i).getKey();
             double shown = Math.max(Rating.MIN, Math.min(Rating.MAX, scored.get(i).getValue()));
-            out.add(new Recommendation(graph.movieId(scored.get(i).getKey()), shown));
+            Accumulator a = acc.get(m);
+            
+            a.evidence.sort(Comparator.comparing(Recommendation.NeighborEvidence::similarity).reversed());
+            List<Recommendation.NeighborEvidence> topEvi = a.evidence.subList(0, Math.min(3, a.evidence.size()));
+            
+            Recommendation.Explanation exp = new Recommendation.Explanation(a.count, a.den / a.count, topEvi);
+            out.add(new Recommendation(graph.movieId(m), shown, exp));
         }
         return out;
+    }
+
+    public double predict(int target, int movieIdx) {
+        if (graph.userDegree(target) < config.minUserRatings()) return Double.NaN;
+        List<Neighbor> neighbors = topNeighbors(target);
+        if (neighbors.isEmpty()) return Double.NaN;
+
+        double num = 0, den = 0;
+        int count = 0;
+        for (Neighbor nb : neighbors) {
+            int v = nb.userIdx();
+            double r = graph.rating(v, movieIdx);
+            if (!Double.isNaN(r)) {
+                num += nb.similarity() * (r - graph.userMean(v));
+                den += Math.abs(nb.similarity());
+                count++;
+            }
+        }
+        if (count < config.minNeighborsPerMovie() || den == 0) return Double.NaN;
+        return graph.userMean(target) + num / den;
     }
 }

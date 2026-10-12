@@ -1,13 +1,24 @@
 import mongoose from "mongoose";
 
-const ratingSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+const recommendationItemSchema = new mongoose.Schema({
   movieId: { type: Number, required: true },
-  rating: { type: Number, required: true, min: 0.5, max: 5 },
-  timestamp: { type: Date, default: Date.now },
+  score: { type: Number, required: true },
+  explanation: {
+    numNeighbors: Number,
+    avgSimilarity: Number,
+    topNeighbors: [{
+      neighborId: String,
+      similarity: Number,
+      rating: Number,
+      sharedMovies: [Number]
+    }]
+  }
+}, { _id: false });
+
+const recommendationSchema = new mongoose.Schema({
+  userId: { type: String, required: true, unique: true },
+  items: [recommendationItemSchema],
+  computedAt: { type: Date, default: Date.now },
 });
 
-// Business rule: one rating per user per movie. Re-rating updates, never duplicates.
-ratingSchema.index({ userId: 1, movieId: 1 }, { unique: true });
-
-export default mongoose.model("Rating", ratingSchema);
+export default mongoose.model("Recommendation", recommendationSchema);

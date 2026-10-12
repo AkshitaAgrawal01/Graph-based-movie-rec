@@ -1,0 +1,89 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(7, 11, 20, 0.78);
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 0;
+  backdrop-filter: blur(16px);
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.brand {
+  font-size: 1.35rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  background: linear-gradient(90deg, #60a5fa, #38bdf8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.link {
+  color: var(--text-secondary);
+  font-weight: 550;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.link:hover,
+.active {
+  color: var(--text-primary);
+}
+
+.active {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.welcome {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.logoutBtn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.92rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.logoutBtn:hover {
+  color: var(--text-primary);
+  border-color: rgba(248, 250, 252, 0.28);
+}
+
+.registerBtn {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.registerBtn:hover {
+  background-color: var(--primary-hover);
+}

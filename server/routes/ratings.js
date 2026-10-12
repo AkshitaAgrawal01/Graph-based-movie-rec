@@ -36,6 +36,37 @@ router.get("/", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Could not load your ratings." });
   }
 });
+
+router.get("/recent", async (req, res) => {
+  try {
+    const ratings = await Rating.find().sort({ timestamp: -1 }).limit(20);
+    const movieIds = ratings.map((r) => r.movieId);
+    const movies = await Movie.find({ movieId: { $in: movieIds } });
+    const movieById = new Map(movies.map((m) => [m.movieId, m]));
+    
+    // We want to return unique recently reviewed movies
+    const uniqueMovies = new Map();
+    for (const r of ratings) {
+      if (!uniqueMovies.has(r.movieId)) {
+        const movie = movieById.get(r.movieId);
+        if (movie) uniqueMovies.set(r.movieId, movie);
+      }
+    }
+    
+    const result = Array.from(uniqueMovies.values()).slice(0, 10).map((m) => ({
+      movieId: m.movieId,
+      title: m.title,
+      year: m.year,
+      genres: m.genres,
+      posterUrl: m.posterUrl
+    }));
+
+    res.json({ movies: result });
+  } catch (err) {
+    res.status(500).json({ error: "Could not load recent ratings." });
+  }
+});
+
 router.post("/", requireAuth, async (req, res) => {
   const { movieId, rating } = req.body;
 

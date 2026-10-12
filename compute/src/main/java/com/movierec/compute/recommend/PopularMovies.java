@@ -54,7 +54,7 @@ public final class PopularMovies {
         List<Recommendation> out = new ArrayList<>();
         for (int i = 0; i < order.size() && i < n; i++) {
             int m = order.get(i);
-            out.add(new Recommendation(g.movieId(m), score[m]));
+            out.add(new Recommendation(g.movieId(m), score[m], null));
         }
         return out;
     }
